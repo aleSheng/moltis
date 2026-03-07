@@ -1,0 +1,55 @@
+[package]
+name              = "moltis-desktop"
+edition.workspace = true
+license.workspace = true
+publish           = false
+version.workspace = true
+
+[lib]
+name       = "moltis_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+anyhow             = { workspace = true }
+axum               = { workspace = true }
+moltis-config      = { workspace = true }
+moltis-gateway     = { workspace = true, features = [
+  "agent",
+  "caldav",
+  "file-watcher",
+  "graphql",
+  "mdns",
+  "metrics",
+  "prometheus",
+  "push-notifications",
+  "qmd",
+  "slack",
+  "tls",
+  "trusted-network",
+  "vault",
+  "voice",
+  "wasm",
+  "web-ui",
+  "whatsapp",
+] }
+moltis-web         = { workspace = true }
+serde              = { features = ["derive"], workspace = true }
+serde_json         = { workspace = true }
+tauri              = { version = "2", features = ["tray-icon"] }
+tauri-plugin-shell = "2"
+tokio              = { workspace = true }
+tracing            = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-single-instance = "2"
+
+[features]
+default         = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+
+[lints]
+workspace = true
