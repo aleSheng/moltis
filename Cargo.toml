@@ -1,6 +1,7 @@
 [workspace]
 default-members = [
   "apps/courier",
+  "apps/desktop",
   "crates/agents",
   "crates/auth",
   "crates/auto-reply",
@@ -54,6 +55,7 @@ default-members = [
 ]
 members = [
   "apps/courier",
+  "apps/desktop",
   "crates/agents",
   "crates/auth",
   "crates/auto-reply",
