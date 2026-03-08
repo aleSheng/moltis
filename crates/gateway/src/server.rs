@@ -1812,6 +1812,16 @@ pub async fn prepare_gateway(
 
     // Migrate plugins data into unified skills system (idempotent, non-fatal).
     moltis_skills::migration::migrate_plugins_to_skills(&data_dir).await;
+
+    // Provision bundled skills into the personal skills directory on first startup.
+    #[cfg(feature = "bundled-skills")]
+    {
+        let skills_dir = data_dir.join("skills");
+        if let Err(e) = moltis_skills::bundled::provision_bundled_skills(&skills_dir).await {
+            tracing::warn!(%e, "failed to provision bundled skills");
+        }
+    }
+
     startup_mem_probe.checkpoint("sqlite.migrations.complete");
 
     // Initialize vault for encryption-at-rest.

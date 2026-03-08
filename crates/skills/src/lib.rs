@@ -3,7 +3,10 @@
 //! Skills are directories containing a `SKILL.md` file with YAML frontmatter
 //! and markdown instructions, following the Agent Skills open standard.
 
+#[cfg(feature = "bundled-skills")]
+pub mod bundled;
 pub mod discover;
+pub mod external_registry;
 pub mod formats;
 pub mod install;
 pub mod manifest;

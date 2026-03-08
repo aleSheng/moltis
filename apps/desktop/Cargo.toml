@@ -18,6 +18,7 @@ axum               = { workspace = true }
 moltis-config      = { workspace = true }
 moltis-gateway     = { workspace = true, features = [
   "agent",
+  "bundled-skills",
   "caldav",
   "file-watcher",
   "graphql",

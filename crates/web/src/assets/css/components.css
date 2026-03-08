@@ -938,6 +938,79 @@
   background: var(--surface);
 }
 
+.skills-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.skills-tab {
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.skills-tab:hover {
+  color: var(--text);
+}
+
+.skills-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.skills-registry-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.skills-registry-card:hover {
+  border-color: var(--accent);
+}
+
+.skills-registry-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 8px;
+}
+
+.skills-category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.skills-category-chip {
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.skills-category-chip:hover,
+.skills-category-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 /* ── Settings Page ── */
 
 .settings-layout {

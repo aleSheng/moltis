@@ -102,6 +102,7 @@ agent = []
 caldav = ["dep:moltis-caldav"]
 default = [
   "agent",
+  "bundled-skills",
   "caldav",
   "file-watcher",
   "graphql",
@@ -123,6 +124,7 @@ default = [
   "web-ui",
   "whatsapp",
 ]
+bundled-skills = ["moltis-skills/bundled-skills"]
 file-watcher = [
   "moltis-memory/file-watcher",
   "moltis-openclaw-import?/file-watcher",
