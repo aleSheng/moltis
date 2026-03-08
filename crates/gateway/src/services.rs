@@ -195,7 +195,11 @@ impl SkillsService for NoopSkillsService {
             .ok_or_else(|| "missing 'source' parameter (owner/repo format)".to_string())?;
         let install_dir =
             moltis_skills::install::default_install_dir().map_err(ServiceError::message)?;
-        let skills = moltis_skills::install::install_skill(source, &install_dir)
+        let auto_enable = params
+            .get("auto_enable")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true);
+        let skills = moltis_skills::install::install_skill(source, &install_dir, auto_enable)
             .await
             .map_err(ServiceError::message)?;
         let installed: Vec<_> = skills

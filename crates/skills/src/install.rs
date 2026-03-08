@@ -15,7 +15,14 @@ use crate::{
 /// Downloads the repo to `install_dir/<owner>-<repo>/`, auto-detects its format
 /// (SKILL.md, Claude Code `.claude-plugin/`, etc.), scans for skills using the
 /// appropriate adapter, and records the repo + skills in the manifest.
-pub async fn install_skill(source: &str, install_dir: &Path) -> anyhow::Result<Vec<SkillMetadata>> {
+///
+/// When `auto_enable` is true, installed skills are marked as trusted and enabled
+/// immediately (one-click install). Otherwise they require manual trust + enable.
+pub async fn install_skill(
+    source: &str,
+    install_dir: &Path,
+    auto_enable: bool,
+) -> anyhow::Result<Vec<SkillMetadata>> {
     #[cfg(feature = "metrics")]
     let start = std::time::Instant::now();
 
@@ -84,6 +91,20 @@ pub async fn install_skill(source: &str, install_dir: &Path) -> anyhow::Result<V
             target.display()
         );
     }
+
+    // Apply auto_enable: mark all skills as trusted + enabled for one-click install.
+    let skill_states = if auto_enable {
+        skill_states
+            .into_iter()
+            .map(|mut s| {
+                s.trusted = true;
+                s.enabled = true;
+                s
+            })
+            .collect()
+    } else {
+        skill_states
+    };
 
     // Write manifest.
     let manifest_path = ManifestStore::default_path()?;

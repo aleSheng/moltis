@@ -794,6 +794,153 @@ function EnabledSkillsTable() {
   </div>`;
 }
 
+// ── Browse & Install tab (registry) ──────────────────────────
+
+function RegistryCard(props) {
+	var s = props.skill;
+	var installing = useSignal(false);
+	var href = /^https?:\/\//.test(s.install_source || s.source)
+		? s.install_source || s.source
+		: `https://github.com/${s.install_source || s.source}`;
+	function onInstall() {
+		installing.value = true;
+		doInstall(s.install_source || s.source).then(() => {
+			installing.value = false;
+		});
+	}
+	return html`<div class="skills-registry-card">
+    <div style="min-width:0;flex:1">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span style="font-family:var(--font-mono);font-size:.82rem;font-weight:600;color:var(--text-strong)">${s.display_name || s.name}</span>
+        ${s.verified && html`<span style="font-size:.6rem;padding:1px 5px;border-radius:9999px;background:var(--accent);color:#fff;font-weight:500">verified</span>`}
+        ${s.license && html`<span style="font-size:.6rem;padding:1px 5px;border-radius:9999px;background:var(--surface2);color:var(--muted)">${s.license}</span>`}
+      </div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:2px">${s.description}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px;font-size:.68rem;color:var(--muted)">
+        <a href=${href} target="_blank" rel="noopener noreferrer"
+           style="color:var(--accent);text-decoration:none;font-family:var(--font-mono)">${s.install_source || s.source}</a>
+        ${s.author && html`<span>${s.author}</span>`}
+        ${s.stars != null && html`<span>\u2605 ${s.stars}</span>`}
+        ${s.downloads != null && html`<span>\u2193 ${s.downloads}</span>`}
+        ${s.registry && s.registry !== "featured" && html`<span class="tier-badge">${s.registry}</span>`}
+      </div>
+    </div>
+    <button onClick=${onInstall} disabled=${installing.value}
+      style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);font-size:.72rem;padding:4px 10px;cursor:pointer;white-space:nowrap;flex-shrink:0">
+      ${installing.value ? "Installing\u2026" : "Install"}
+    </button>
+  </div>`;
+}
+
+function BrowseTab() {
+	var registrySkills = useSignal([]);
+	var registryCategories = useSignal([]);
+	var registryLoading = useSignal(false);
+	var registrySearchQuery = useSignal("");
+	var activeCategory = useSignal("");
+	var searchTimer = useRef(null);
+
+	useEffect(() => {
+		registryLoading.value = true;
+		Promise.all([
+			fetch("/api/skills/registry/featured").then((r) => r.json()),
+			fetch("/api/skills/registry/categories").then((r) => r.json()),
+		])
+			.then(([featured, cats]) => {
+				registrySkills.value = featured.skills || [];
+				registryCategories.value = cats.categories || [];
+				registryLoading.value = false;
+			})
+			.catch(() => {
+				registryLoading.value = false;
+			});
+	}, []);
+
+	function doSearch(q) {
+		if (!q.trim()) {
+			// Reset to featured
+			registryLoading.value = true;
+			fetch("/api/skills/registry/featured")
+				.then((r) => r.json())
+				.then((data) => {
+					registrySkills.value = data.skills || [];
+					registryLoading.value = false;
+				})
+				.catch(() => {
+					registryLoading.value = false;
+				});
+			return;
+		}
+		registryLoading.value = true;
+		fetch(`/api/skills/registry/search?q=${encodeURIComponent(q)}&limit=30`)
+			.then((r) => r.json())
+			.then((data) => {
+				registrySkills.value = data.skills || [];
+				registryLoading.value = false;
+			})
+			.catch(() => {
+				registryLoading.value = false;
+			});
+	}
+
+	function onSearchInput(e) {
+		var q = e.target.value;
+		registrySearchQuery.value = q;
+		activeCategory.value = "";
+		if (searchTimer.current) clearTimeout(searchTimer.current);
+		searchTimer.current = setTimeout(() => doSearch(q), 300);
+	}
+
+	function onCategoryClick(catId) {
+		if (activeCategory.value === catId) {
+			activeCategory.value = "";
+			registrySearchQuery.value = "";
+			doSearch("");
+		} else {
+			activeCategory.value = catId;
+			registrySearchQuery.value = catId;
+			doSearch(catId);
+		}
+	}
+
+	var displayedSkills = registrySkills.value;
+
+	return html`<div class="flex flex-col gap-3">
+    <div class="skills-install-box">
+      <input type="text" placeholder="Search skills (e.g. deploy, docker, pdf)..."
+        class="skills-install-input" style="max-width:480px"
+        value=${registrySearchQuery.value} onInput=${onSearchInput} />
+    </div>
+
+    ${registryCategories.value.length > 0 && html`<div class="skills-category-chips">
+      ${registryCategories.value.map(
+				(cat) =>
+					html`<button key=${cat.id}
+            class=${`skills-category-chip ${activeCategory.value === cat.id ? "active" : ""}`}
+            onClick=${() => onCategoryClick(cat.id)}>
+            ${cat.name} (${cat.count})
+          </button>`,
+			)}
+    </div>`}
+
+    ${registryLoading.value && html`<div style="padding:12px;color:var(--muted);font-size:.82rem">Loading\u2026</div>`}
+
+    ${!registryLoading.value && displayedSkills.length === 0 && html`<div style="padding:12px;color:var(--muted);font-size:.82rem">
+      ${registrySearchQuery.value.trim() ? "No matching skills found." : "No featured skills available."}
+    </div>`}
+
+    ${!registryLoading.value && displayedSkills.length > 0 && html`<div class="skills-registry-grid">
+      ${displayedSkills.map((s) => html`<${RegistryCard} key=${s.source + ":" + s.name} skill=${s} />`)}
+    </div>`}
+
+    <${InstallProgressBar} />
+  </div>`;
+}
+
+// ── Main page with tabs ──────────────────────────────────────
+
+var activeTab = signal("my-skills");
+
 function SkillsPage() {
 	useEffect(() => {
 		ensurePrefetch().then(() => {
@@ -827,14 +974,26 @@ function SkillsPage() {
         <button class="provider-btn provider-btn-secondary provider-btn-sm" onClick=${fetchAll}>Refresh</button>
         <button class="provider-btn provider-btn-danger provider-btn-sm" onClick=${emergencyDisableAllSkills}>Emergency Disable</button>
       </div>
-      <p class="text-sm text-[var(--muted)]">SKILL.md-based skills discovered from project, personal, and installed paths. <a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview" target="_blank" rel="noopener noreferrer" class="text-[var(--accent)] no-underline hover:underline">How to write a skill?</a></p>
-      <${SecurityWarning} />
-      <${InstallBox} />
-      <${InstallProgressBar} />
-      <${FeaturedSection} />
-      <${ReposSection} />
-      ${loading.value && enabledSkills.value.length === 0 && repos.value.length === 0 && html`<div style="padding:24px;text-align:center;color:var(--muted);font-size:.85rem">Loading skills\u2026</div>`}
-      <${EnabledSkillsTable} />
+
+      <div class="skills-tabs">
+        <button class=${`skills-tab ${activeTab.value === "my-skills" ? "active" : ""}`}
+          onClick=${() => { activeTab.value = "my-skills"; }}>My Skills</button>
+        <button class=${`skills-tab ${activeTab.value === "browse" ? "active" : ""}`}
+          onClick=${() => { activeTab.value = "browse"; }}>Browse & Install</button>
+      </div>
+
+      ${activeTab.value === "my-skills" && html`<div class="flex flex-col gap-4">
+        <p class="text-sm text-[var(--muted)]">SKILL.md-based skills discovered from project, personal, and installed paths. <a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview" target="_blank" rel="noopener noreferrer" class="text-[var(--accent)] no-underline hover:underline">How to write a skill?</a></p>
+        <${SecurityWarning} />
+        <${InstallBox} />
+        <${InstallProgressBar} />
+        <${FeaturedSection} />
+        <${ReposSection} />
+        ${loading.value && enabledSkills.value.length === 0 && repos.value.length === 0 && html`<div style="padding:24px;text-align:center;color:var(--muted);font-size:.85rem">Loading skills\u2026</div>`}
+        <${EnabledSkillsTable} />
+      </div>`}
+
+      ${activeTab.value === "browse" && html`<${BrowseTab} />`}
     </div>
     <${Toasts} />
     <${ConfirmDialog} />

@@ -633,6 +633,52 @@ pub async fn api_skills_search_handler(
     api_search_handler(repos, &source, &query).await
 }
 
+// ── Registry (browse / search external skill catalogs) ──────────────────────
+
+pub async fn api_skills_registry_featured_handler() -> impl IntoResponse {
+    let registry = moltis_skills::external_registry::BuiltinFeaturedProvider;
+    match moltis_skills::external_registry::RegistryProvider::featured(&registry).await {
+        Ok(skills) => Json(serde_json::json!({ "skills": skills })).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": e.to_string() })),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn api_skills_registry_search_handler(
+    Query(params): Query<HashMap<String, String>>,
+) -> impl IntoResponse {
+    let query = params.get("q").cloned().unwrap_or_default();
+    let limit = params
+        .get("limit")
+        .and_then(|v| v.parse::<usize>().ok())
+        .unwrap_or(20);
+    let registry = moltis_skills::external_registry::BuiltinFeaturedProvider;
+    match moltis_skills::external_registry::RegistryProvider::search(&registry, &query, limit).await
+    {
+        Ok(skills) => Json(serde_json::json!({ "skills": skills })).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": e.to_string() })),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn api_skills_registry_categories_handler() -> impl IntoResponse {
+    let registry = moltis_skills::external_registry::BuiltinFeaturedProvider;
+    match moltis_skills::external_registry::RegistryProvider::categories(&registry).await {
+        Ok(categories) => Json(serde_json::json!({ "categories": categories })).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": e.to_string() })),
+        )
+            .into_response(),
+    }
+}
+
 // ── Images ───────────────────────────────────────────────────────────────────
 
 pub async fn api_cached_images_handler() -> impl IntoResponse {

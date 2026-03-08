@@ -496,7 +496,7 @@ async fn handle_skills(action: SkillAction) -> anyhow::Result<()> {
         },
         SkillAction::Add { source } => {
             let install_dir = install::default_install_dir()?;
-            let skills = install::install_skill(&source, &install_dir).await?;
+            let skills = install::install_skill(&source, &install_dir, true).await?;
             for meta in &skills {
                 println!("Installed skill '{}': {}", meta.name, meta.description);
             }
